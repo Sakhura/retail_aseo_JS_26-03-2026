@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retail Aseo — Artículos de Higiene y Limpieza</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="logo">
+        <span class="logo-icon">🧴</span>
+        <span class="logo-text">Retail<strong>Aseo</strong></span>
+      </div>
+
+      <nav class="main-nav" id="mainNav">
+        <a href="#catalogo">Catálogo</a>
+        <a href="#como-comprar">Cómo Comprar</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn btn-outline btn-sm" id="btnLogin">Iniciar Sesión</button>
+        <button class="cart-btn" id="cartBtn" title="Ver carrito">
+          🛒 <span class="cart-count" id="cartCount">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ HERO ════════════════════════════════════════════════════════════ -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="hero-text">
+        <h1>Todo lo que necesitas<br /><span>en artículos de aseo</span></h1>
+        <p>Jabones, desinfectantes, shampoos, detergentes y más.<br />
+           Compra online — retira en tienda o recíbelo en tu hogar.</p>
+        <div class="hero-badges">
+          <span class="badge">🏪 Retiro en tienda</span>
+          <span class="badge">🚚 Despacho a domicilio</span>
+          <span class="badge">✅ Productos garantizados</span>
+        </div>
+        <a href="#catalogo" class="btn btn-primary">Ver catálogo</a>
+      </div>
+      <div class="hero-img">🧼</div>
+    </div>
+  </section>
+
+  <!-- ══ STATUS BAR (solo desarrollo) ═══════════════════════════════════ -->
+  <div class="status-bar" id="statusBar">
+    <div class="container">
+      Comprobando servidor… <span id="serverStatus"></span>
+    </div>
+  </div>
+
+  <!-- ══ FILTROS + CATÁLOGO ═══════════════════════════════════════════════ -->
+  <main class="container main-content" id="catalogo">
+    <h2 class="section-title">Nuestro Catálogo</h2>
+
+    <div class="filters-row">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Buscar producto..."
+        class="input-field"
+      />
+      <select id="categoryFilter" class="input-field">
+        <option value="">Todas las categorías</option>
+      </select>
+      <label class="checkbox-label">
+        <input type="checkbox" id="hideExpired" checked />
+        Ocultar vencidos
+      </label>
+    </div>
+
+    <!-- Grilla de productos -->
+    <div class="products-grid" id="productsGrid">
+      <p class="loading-msg">Cargando productos…</p>
+    </div>
+  </main>
+
+  <!-- ══ CÓMO COMPRAR ════════════════════════════════════════════════════ -->
+  <section class="how-section" id="como-comprar">
+    <div class="container">
+      <h2 class="section-title">¿Cómo comprar?</h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>Elige tus productos</h3>
+          <p>Navega el catálogo y agrega al carrito lo que necesitas.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>Selecciona entrega</h3>
+          <p>Escoge entre retiro en tienda o despacho a domicilio.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>Confirma y paga</h3>
+          <p>Ingresa tus datos, confirma el pedido y recibe tu número de orden.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">4</div>
+          <h3>¡Listo!</h3>
+          <p>Sigue el estado de tu pedido desde tu cuenta.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FOOTER ══════════════════════════════════════════════════════════ -->
+  <footer class="site-footer" id="contacto">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="logo-icon">🧴</span>
+        <strong>RetailAseo</strong>
+        <p>Artículos de higiene y limpieza para el hogar.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Navegación</h4>
+        <a href="#catalogo">Catálogo</a>
+        <a href="#como-comprar">Cómo Comprar</a>
+        <a href="/status" target="_blank">Estado API</a>
+      </div>
+      <div class="footer-contact">
+        <h4>Contacto</h4>
+        <p>📍 Av. Principal 1234, Santiago</p>
+        <p>📞 +56 9 1234 5678</p>
+        <p>✉️ contacto@retailaseo.cl</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 RetailAseo — Proyecto Módulo 6/7/8 </p>
+    </div>
+  </footer>
+
+  <!-- ══ MODAL: CARRITO ═══════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="cartModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🛒 Mi Carrito</h3>
+        <button class="modal-close" id="closeCart">✕</button>
+      </div>
+      <div class="modal-body" id="cartBody">
+        <p class="empty-cart">Tu carrito está vacío.</p>
+      </div>
+      <div class="modal-footer" id="cartFooter" style="display:none">
+        <div class="cart-total">
+          Total: <strong id="cartTotal">$0</strong>
+        </div>
+        <div class="delivery-options">
+          <label class="radio-label">
+            <input type="radio" name="tipoEntrega" value="retiro" checked /> 🏪 Retiro en tienda
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="tipoEntrega" value="despacho" /> 🚚 Despacho a domicilio
+          </label>
+        </div>
+        <div id="addressSection" style="display:none">
+          <input type="text" id="addressInput" class="input-field" placeholder="Dirección de entrega" />
+        </div>
+        <button class="btn btn-primary btn-block" id="checkoutBtn">Confirmar Pedido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: LOGIN ═════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3 id="authModalTitle">Iniciar Sesión</h3>
+        <button class="modal-close" id="closeLogin">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="loginForm">
+          <input type="email" id="loginEmail" class="input-field" placeholder="Email" />
+          <input type="password" id="loginPassword" class="input-field" placeholder="Contraseña" />
+          <button class="btn btn-primary btn-block" id="submitLogin">Entrar</button>
+          <p class="auth-switch">
+            ¿No tienes cuenta?
+            <a href="#" id="goToRegister">Regístrate aquí</a>
+          </p>
+        </div>
+        <div id="registerForm" style="display:none">
+          <input type="text" id="regNombre" class="input-field" placeholder="Nombre completo" />
+          <input type="email" id="regEmail" class="input-field" placeholder="Email" />
+          <input type="password" id="regPassword" class="input-field" placeholder="Contraseña" />
+          <input type="tel" id="regTelefono" class="input-field" placeholder="Teléfono (opcional)" />
+          <button class="btn btn-primary btn-block" id="submitRegister">Registrarme</button>
+          <p class="auth-switch">
+            ¿Ya tienes cuenta?
+            <a href="#" id="goToLogin">Inicia sesión</a>
+          </p>
+        </div>
+        <p class="auth-msg" id="authMsg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOAST NOTIFICATION ══════════════════════════════════════════════ -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/public/js/main.js"></script>
+</body>
+</html>
