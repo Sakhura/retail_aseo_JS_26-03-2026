@@ -7,6 +7,14 @@ let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let token = localStorage.getItem('token') || null;
 let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
+//estado global de la aplicacion 
+const state={
+  products: [],
+  cart: JSON.parse(localStorage.getItem('cart') || '[]'),
+  token: localStorage.getItem('token') || null,
+  user: JSON.parse(localStorage.getItem('user') || 'null')
+}
+
 //helper
 async function apiFetch(url, options = {}) {
     const headers = { 'Content-Type': 'aplication/json',  ...options.headers };
@@ -24,6 +32,39 @@ function showToast(msg, type = '') {
     t.className = `toast shoe ${type}`;
     setTimeout(()=> {t.className = 'toast'; }, 3200);
 }
+
+// guardar y limpiar sesion
+function saveSession(token, user){
+  state.token = token;
+  state.user = user;
+  localStorage.setItem('token', token);
+  localStorage.setItem('user', JSON.stringify(user));
+}
+
+function clearSession(){
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  updateAuthButton();
+}
+
+function updateAuthButton(){
+  const btn = document.getElementById('btnLogin');
+  if(state.user){
+    btn.textContent= `${state.user.nombre.split(' ')[0]}`;
+    btn.onclick =() => {
+      if(confirm('¿Cerrar Sesión?')) {clearSession(); showToast('Sesión Cerrada', 'warning');}
+    };
+  }else{
+    btn.textContent = 'Iniciar Sesión';
+    btn.onclick = () => openLoginModal('loginModal');
+  }
+}
+
+//modales
+
+
 
 // usd a clp
 const formatPrice = (n) =>
