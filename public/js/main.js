@@ -1,400 +1,376 @@
-// logica frontend js
-const api = '/api'
+// public/js/main.js — Lógica frontend de RetailAseo
+// Consume la API REST del backend para mostrar productos, gestionar el carrito
+// y permitir registro/login/checkout al usuario.
 
-// estado global 
+const API = '/api';
 
-let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-let token = localStorage.getItem('token') || null;
-let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+// ── Estado global de la aplicación ──────────────────────────────────────
+const state = {
+  products:  [],
+  cart:      JSON.parse(localStorage.getItem('cart') || '[]'),
+  token:     localStorage.getItem('token') || null,
+  user:      JSON.parse(localStorage.getItem('user')  || 'null'),
+};
 
-//estado global de la aplicacion 
-const state={
-  products: [],
-  cart: JSON.parse(localStorage.getItem('cart') || '[]'),
-  token: localStorage.getItem('token') || null,
-  user: JSON.parse(localStorage.getItem('user') || 'null')
+// ── Helpers de petición ──────────────────────────────────────────────────
+async function apiFetch(endpoint, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+
+  const res  = await fetch(`${API}${endpoint}`, { ...options, headers });
+  const data = await res.json();
+  return { ok: res.ok, status: res.status, data };
 }
 
-//helper
-async function apiFetch(url, options = {}) {
-    const headers = { 'Content-Type': 'aplication/json',  ...options.headers };
-    if (token) headers['Authorization'] = `Beader ${token}`;
-    const res = await fetch(url, { ...options, headers});
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.message || 'Error en la conexión');
-    return data;
+// ── Toast notification ───────────────────────────────────────────────────
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent  = message;
+  toast.className    = `toast ${type} show`;
+  setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
-// notificaciones toast
-function showToast(msg, type = '') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = `toast shoe ${type}`;
-    setTimeout(()=> {t.className = 'toast'; }, 3200);
-}
-
-// guardar y limpiar sesion
-function saveSession(token, user){
+// ── Guardar/limpiar sesión ───────────────────────────────────────────────
+function saveSession(token, user) {
   state.token = token;
-  state.user = user;
+  state.user  = user;
   localStorage.setItem('token', token);
-  localStorage.setItem('user', JSON.stringify(user));
+  localStorage.setItem('user',  JSON.stringify(user));
+  updateAuthButton();
 }
 
-function clearSession(){
+function clearSession() {
   state.token = null;
-  state.user = null;
+  state.user  = null;
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   updateAuthButton();
 }
 
-function updateAuthButton(){
+function updateAuthButton() {
   const btn = document.getElementById('btnLogin');
-  if(state.user){
-    btn.textContent= `${state.user.nombre.split(' ')[0]}`;
-    btn.onclick =() => {
-      if(confirm('¿Cerrar Sesión?')) {clearSession(); showToast('Sesión Cerrada', 'warning');}
-    };
-  }else{
-    btn.textContent = 'Iniciar Sesión';
-    btn.onclick = () => openLoginModal('loginModal');
-  }
-}
-
-//modales
-
-
-
-// usd a clp
-const formatPrice = (n) =>
-    new Intl.NumberFormat('es-CL', { 
-        style : 'currency',
-        currency : 'CLP'
-    }).format(n);
-
-// calcular el vcto de los productos
-function expiryBadge(product) {
-    if(!product_tiene_vencimiento || !product.fecha_vencimiento);
-    const exp = new Date(product.fecha_vencimiento);
-    const days = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
-    if(days < 0) return `<span class = "product-expiry expiry-expired">Vencido</span>`;
-    if(days <= 30) return `<span class = "product-expiry expiry-soon">Vence en ${days} días</span>`;
-    return `<span class = "product-expiry expiry-ok">Vence en ${exp.toLocaleDateString('es-CL')} </span>`;
-}
-
-//status servidor
-async function checkServerStatus() {
-    const el = document.getElementById('serverStatus');
-    try{
-        const data = await fetch('/status').then((r) => r.json);
-        el.innerHTML = `<span class = "ok"> ${data.message}</span>`
-    }catch{
-        el.innerHTML = `<span class = "fail"> Servidor No disponible</span>`
-    
-    }
-}
-
-//  AUTENTICACIÓN 
-function updateAuthUI() {
-  const btn = document.getElementById('btnLogin');
-  if (currentUser) {
-    btn.textContent = ` ${currentUser.nombre.split(' ')[0]}`;
+  if (state.user) {
+    btn.textContent = `👤 ${state.user.nombre.split(' ')[0]}`;
     btn.onclick = () => {
-      token = null; currentUser = null;
-      localStorage.removeItem('token'); localStorage.removeItem('user');
-      updateAuthUI();
-      showToast('Sesión cerrada');
+      if (confirm('¿Cerrar sesión?')) { clearSession(); showToast('Sesión cerrada.', 'warning'); }
     };
   } else {
     btn.textContent = 'Iniciar Sesión';
-    btn.onclick = openLoginModal;
+    btn.onclick = () => openModal('loginModal');
   }
 }
 
-function openLoginModal() {
-  document.getElementById('loginModal').classList.add('open');
-  document.getElementById('loginForm').style.display = '';
-  document.getElementById('registerForm').style.display = 'none';
-  document.getElementById('authModalTitle').textContent = 'Iniciar Sesión';
-  document.getElementById('authMsg').textContent = '';
-}
+// ── Modales ──────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-document.getElementById('closeLogin').onclick = () =>
-  document.getElementById('loginModal').classList.remove('open');
+document.getElementById('closeCart').onclick  = () => closeModal('cartModal');
+document.getElementById('closeLogin').onclick = () => closeModal('loginModal');
+document.querySelectorAll('.modal-overlay').forEach(m =>
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); })
+);
 
-document.getElementById('goToRegister').onclick = (e) => {
-  e.preventDefault();
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('registerForm').style.display = '';
-  document.getElementById('authModalTitle').textContent = 'Crear cuenta';
-};
-document.getElementById('goToLogin').onclick = (e) => {
-  e.preventDefault();
-  document.getElementById('registerForm').style.display = 'none';
-  document.getElementById('loginForm').style.display = '';
-  document.getElementById('authModalTitle').textContent = 'Iniciar Sesión';
-};
+// ── CARRITO ──────────────────────────────────────────────────────────────
+function saveCart() { localStorage.setItem('cart', JSON.stringify(state.cart)); }
 
-// Login
-document.getElementById('submitLogin').onclick = async () => {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  const msg = document.getElementById('authMsg');
-  if (!email || !password) { msg.textContent = 'Completa todos los campos'; msg.className = 'auth-msg error'; return; }
-  try {
-    const res = await apiFetch(`${API}/auth/login`, {
-      method: 'POST', body: JSON.stringify({ email, password }),
-    });
-    token = res.data.token; currentUser = res.data.usuario;
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(currentUser));
-    document.getElementById('loginModal').classList.remove('open');
-    updateAuthUI();
-    showToast(`¡Bienvenido, ${currentUser.nombre}!`, 'success');
-  } catch (err) {
-    msg.textContent = err.message; msg.className = 'auth-msg error';
+function addToCart(product) {
+  const existing = state.cart.find(i => i.id === product.id);
+  if (existing) {
+    if (existing.qty >= product.stock) { showToast('Stock máximo alcanzado.', 'warning'); return; }
+    existing.qty++;
+  } else {
+    state.cart.push({ id: product.id, nombre: product.nombre, precio: product.precio, qty: 1, stock: product.stock });
   }
-};
-
-// Registro
-document.getElementById('submitRegister').onclick = async () => {
-  const nombre = document.getElementById('regNombre').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const password = document.getElementById('regPassword').value;
-  const telefono = document.getElementById('regTelefono').value.trim();
-  const msg = document.getElementById('authMsg');
-  if (!nombre || !email || !password) { msg.textContent = 'Nombre, email y contraseña son obligatorios'; msg.className = 'auth-msg error'; return; }
-  try {
-    await apiFetch(`${API}/auth/register`, {
-      method: 'POST', body: JSON.stringify({ nombre, email, password, telefono }),
-    });
-    msg.textContent = '¡Cuenta creada! Ahora inicia sesión.'; msg.className = 'auth-msg success';
-    setTimeout(() => {
-      document.getElementById('registerForm').style.display = 'none';
-      document.getElementById('loginForm').style.display = '';
-      document.getElementById('authModalTitle').textContent = 'Iniciar Sesión';
-      document.getElementById('loginEmail').value = email;
-    }, 1500);
-  } catch (err) {
-    msg.textContent = err.message; msg.className = 'auth-msg error';
-  }
-};
-
-//  CATÁLOGO DE PRODUCTOS 
-async function loadCategories() {
-  try {
-    const res = await apiFetch(`${API}/categories`);
-    const sel = document.getElementById('categoryFilter');
-    res.data.forEach((cat) => {
-      const opt = document.createElement('option');
-      opt.value = cat.id; opt.textContent = cat.nombre;
-      sel.appendChild(opt);
-    });
-  } catch { /* silencioso */ }
-}
-
-async function loadProducts() {
-  const grid = document.getElementById('productsGrid');
-  grid.innerHTML = '<p class="loading-msg">Cargando productos…</p>';
-
-  const nombre = document.getElementById('searchInput').value.trim();
-  const categoria = document.getElementById('categoryFilter').value;
-  const hideExpired = document.getElementById('hideExpired').checked;
-
-  const params = new URLSearchParams();
-  if (nombre) params.set('nombre', nombre);
-  if (categoria) params.set('categoria', categoria);
-  if (hideExpired) params.set('vencidos', 'false');
-
-  try {
-    const res = await apiFetch(`${API}/products?${params}`);
-    const products = res.data;
-
-    if (!products.length) {
-      grid.innerHTML = '<p class="loading-msg">No se encontraron productos.</p>';
-      return;
-    }
-
-    grid.innerHTML = products.map((p) => {
-      const imgContent = p.imagen
-        ? `<img src="${p.imagen}" alt="${p.nombre}" loading="lazy" />`
-        : '🧴';
-      const expiry = expiryBadge(p);
-      const outOfStock = p.stock === 0;
-      return `
-        <div class="product-card" data-id="${p.id}">
-          <div class="product-img">${imgContent}</div>
-          <div class="product-body">
-            <span class="product-category">${p.categoria?.nombre || ''}</span>
-            <h3 class="product-name">${p.nombre}</h3>
-            ${expiry}
-            <div class="product-price">${formatPrice(p.precio)}</div>
-            <span class="product-stock">${outOfStock ? '❌ Sin stock' : `Stock: ${p.stock}`}</span>
-          </div>
-          <div class="product-footer">
-            <button
-              class="btn btn-primary btn-block add-cart-btn"
-              data-id="${p.id}" data-name="${p.nombre}" data-price="${p.precio}"
-              ${outOfStock ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}
-            >
-              ${outOfStock ? 'Sin stock' : '🛒 Agregar'}
-            </button>
-          </div>
-        </div>`;
-    }).join('');
-
-    // Eventos de los botones "Agregar al carrito"
-    grid.querySelectorAll('.add-cart-btn:not([disabled])').forEach((btn) => {
-      btn.onclick = () => addToCart(btn.dataset.id, btn.dataset.name, parseFloat(btn.dataset.price));
-    });
-  } catch (err) {
-    grid.innerHTML = `<p class="loading-msg">⚠️ Error: ${err.message}</p>`;
-  }
-}
-
-// Buscar al escribir (debounce)
-let searchTimer;
-document.getElementById('searchInput').addEventListener('input', () => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(loadProducts, 400);
-});
-document.getElementById('categoryFilter').addEventListener('change', loadProducts);
-document.getElementById('hideExpired').addEventListener('change', loadProducts);
-
-//  CARRITO 
-function addToCart(id, name, price) {
-  const existing = cart.find((i) => i.id === id);
-  if (existing) { existing.qty++; }
-  else { cart.push({ id, name, price, qty: 1 }); }
   saveCart();
   updateCartCount();
-  showToast(`"${name}" agregado al carrito`, 'success');
+  showToast(`"${product.nombre}" agregado al carrito.`);
 }
 
-function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); }
-
 function updateCartCount() {
-  const total = cart.reduce((s, i) => s + i.qty, 0);
+  const total = state.cart.reduce((acc, i) => acc + i.qty, 0);
   document.getElementById('cartCount').textContent = total;
 }
 
 function renderCart() {
-  const body = document.getElementById('cartBody');
+  const body   = document.getElementById('cartBody');
   const footer = document.getElementById('cartFooter');
 
-  if (!cart.length) {
-    body.innerHTML = '<p class="empty-cart">Tu carrito está vacío.</p>';
+  if (state.cart.length === 0) {
+    body.innerHTML  = '<p class="empty-cart">Tu carrito está vacío.</p>';
     footer.style.display = 'none';
     return;
   }
 
-  footer.style.display = '';
-  body.innerHTML = cart.map((item) => `
-    <div class="cart-item" data-id="${item.id}">
+  footer.style.display = 'flex';
+
+  body.innerHTML = state.cart.map(item => `
+    <div class="cart-item">
       <div class="cart-item-info">
-        <div class="cart-item-name">${item.name}</div>
-        <div class="cart-item-price">${formatPrice(item.price)} c/u</div>
+        <div class="cart-item-name">${item.nombre}</div>
+        <div class="cart-item-price">$${Number(item.precio).toLocaleString('es-CL')} c/u</div>
       </div>
       <div class="cart-item-controls">
-        <button class="qty-btn" data-action="dec" data-id="${item.id}">−</button>
+        <button class="qty-btn" onclick="changeQty(${item.id}, -1)">−</button>
         <span class="qty-display">${item.qty}</span>
-        <button class="qty-btn" data-action="inc" data-id="${item.id}">+</button>
+        <button class="qty-btn" onclick="changeQty(${item.id},  1)">+</button>
+        <button class="cart-item-remove" onclick="removeFromCart(${item.id})">🗑</button>
       </div>
-      <button class="cart-item-remove" data-id="${item.id}">🗑</button>
     </div>
   `).join('');
 
-  // Total
-  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  document.getElementById('cartTotal').textContent = formatPrice(total);
-
-  // Eventos de cantidad y eliminar
-  body.querySelectorAll('.qty-btn').forEach((btn) => {
-    btn.onclick = () => changeQty(btn.dataset.id, btn.dataset.action);
-  });
-  body.querySelectorAll('.cart-item-remove').forEach((btn) => {
-    btn.onclick = () => removeFromCart(btn.dataset.id);
-  });
+  const total = state.cart.reduce((acc, i) => acc + i.precio * i.qty, 0);
+  document.getElementById('cartTotal').textContent = `$${total.toLocaleString('es-CL')}`;
 }
 
-function changeQty(id, action) {
-  const item = cart.find((i) => i.id === id);
+window.changeQty = (id, delta) => {
+  const item = state.cart.find(i => i.id === id);
   if (!item) return;
-  if (action === 'inc') { item.qty++; }
-  else { item.qty--; if (item.qty <= 0) cart = cart.filter((i) => i.id !== id); }
-  saveCart(); updateCartCount(); renderCart();
-}
-
-function removeFromCart(id) {
-  cart = cart.filter((i) => i.id !== id);
-  saveCart(); updateCartCount(); renderCart();
-}
-
-// Abrir / cerrar carrito
-document.getElementById('cartBtn').onclick = () => {
-  renderCart();
-  document.getElementById('cartModal').classList.add('open');
+  item.qty += delta;
+  if (item.qty <= 0) { removeFromCart(id); return; }
+  if (item.qty > item.stock) { item.qty = item.stock; showToast('Stock máximo alcanzado.', 'warning'); }
+  saveCart(); renderCart(); updateCartCount();
 };
-document.getElementById('closeCart').onclick = () =>
-  document.getElementById('cartModal').classList.remove('open');
 
-// Mostrar / ocultar campo dirección según tipo de entrega
-document.querySelectorAll('input[name="tipoEntrega"]').forEach((radio) => {
-  radio.addEventListener('change', () => {
+window.removeFromCart = (id) => {
+  state.cart = state.cart.filter(i => i.id !== id);
+  saveCart(); renderCart(); updateCartCount();
+};
+
+document.getElementById('cartBtn').onclick = () => { renderCart(); openModal('cartModal'); };
+
+// Mostrar/ocultar campo dirección según tipo de entrega
+document.querySelectorAll('[name="tipoEntrega"]').forEach(radio => {
+  radio.addEventListener('change', e => {
     document.getElementById('addressSection').style.display =
-      radio.value === 'despacho' ? '' : 'none';
+      e.target.value === 'despacho' ? 'block' : 'none';
   });
 });
 
-//  CHECKOUT 
+// ── CHECKOUT ─────────────────────────────────────────────────────────────
 document.getElementById('checkoutBtn').onclick = async () => {
-  if (!token) {
-    document.getElementById('cartModal').classList.remove('open');
-    openLoginModal();
-    showToast('Debes iniciar sesión para confirmar el pedido', 'warning');
+  if (!state.token) {
+    closeModal('cartModal');
+    openModal('loginModal');
+    showToast('Debes iniciar sesión para comprar.', 'warning');
     return;
   }
 
-  const tipoEntrega = document.querySelector('input[name="tipoEntrega"]:checked').value;
-  const direccion = document.getElementById('addressInput').value.trim();
+  const tipoEntrega    = document.querySelector('[name="tipoEntrega"]:checked').value;
+  const direccionEntrega = document.getElementById('addressInput').value.trim();
 
-  if (tipoEntrega === 'despacho' && !direccion) {
-    showToast('Ingresa la dirección de despacho', 'error'); return;
+  if (tipoEntrega === 'despacho' && !direccionEntrega) {
+    showToast('Debes ingresar una dirección de entrega.', 'warning');
+    return;
   }
 
-  const items = cart.map((i) => ({ producto_id: i.id, cantidad: i.qty }));
+  const payload = {
+    tipoEntrega,
+    direccionEntrega: tipoEntrega === 'despacho' ? direccionEntrega : null,
+    items: state.cart.map(i => ({ productId: i.id, cantidad: i.qty })),
+  };
 
-  try {
-    const res = await apiFetch(`${API}/orders`, {
-      method: 'POST',
-      body: JSON.stringify({
-        tipo_entrega: tipoEntrega,
-        items,
-        direccion_entrega: tipoEntrega === 'despacho' ? direccion : undefined,
-      }),
-    });
-    cart = []; saveCart(); updateCartCount();
-    document.getElementById('cartModal').classList.remove('open');
-    showToast(`✅ Pedido #${res.data.id} creado. Total: ${formatPrice(res.data.total)}`, 'success');
-    loadProducts(); // Actualizar stock en la vista
-  } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+  const { ok, data } = await apiFetch('/orders', {
+    method: 'POST',
+    body:   JSON.stringify(payload),
+  });
+
+  if (ok) {
+    state.cart = [];
+    saveCart();
+    updateCartCount();
+    closeModal('cartModal');
+    showToast(`✅ Pedido #${data.data.id} confirmado. ¡Gracias por tu compra!`, 'success');
+    loadProducts(); // Recargar para actualizar stock
+  } else {
+    showToast(data.message || 'Error al procesar el pedido.', 'error');
   }
 };
 
-// Cerrar modales al hacer click en el overlay
-document.querySelectorAll('.modal-overlay').forEach((overlay) => {
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.classList.remove('open');
-  });
-});
+// ── PRODUCTOS ────────────────────────────────────────────────────────────
+function formatExpiry(dateStr) {
+  if (!dateStr) return '';
+  const today  = new Date(); today.setHours(0, 0, 0, 0);
+  const expiry = new Date(dateStr + 'T00:00:00');
+  const diff   = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
 
-//  INICIO 
+  if (diff < 0)   return `<span class="product-expiry expiry-expired">⛔ Vencido</span>`;
+  if (diff <= 30) return `<span class="product-expiry expiry-soon">⚠️ Vence en ${diff} días</span>`;
+  return `<span class="product-expiry expiry-ok">✅ Vigente</span>`;
+}
+
+function renderProducts(products) {
+  const grid = document.getElementById('productsGrid');
+
+  if (products.length === 0) {
+    grid.innerHTML = '<p class="loading-msg">No se encontraron productos.</p>';
+    return;
+  }
+
+  grid.innerHTML = products.map(p => {
+    const imgContent = p.imagen
+      ? `<img src="${p.imagen}" alt="${p.nombre}" />`
+      : '🧴';
+
+    return `
+      <div class="product-card">
+        <div class="product-img">${imgContent}</div>
+        <div class="product-body">
+          <span class="product-category">${p.category?.nombre || 'Sin categoría'}</span>
+          <div class="product-name">${p.nombre}</div>
+          ${p.descripcion ? `<div class="product-stock" style="color:var(--clr-gray-600);font-size:.85rem">${p.descripcion.substring(0,80)}${p.descripcion.length>80?'…':''}</div>` : ''}
+          ${formatExpiry(p.fechaVencimiento)}
+          <div class="product-price">$${Number(p.precio).toLocaleString('es-CL')}</div>
+          <div class="product-stock">Stock: ${p.stock} unidades</div>
+        </div>
+        <div class="product-footer">
+          <button
+            class="btn btn-primary btn-sm btn-block"
+            onclick='addToCart(${JSON.stringify({ id: p.id, nombre: p.nombre, precio: Number(p.precio), stock: p.stock })})'
+            ${p.stock === 0 ? 'disabled' : ''}
+          >
+            ${p.stock === 0 ? 'Sin stock' : '🛒 Agregar'}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadProducts() {
+  const search    = document.getElementById('searchInput').value.trim();
+  const category  = document.getElementById('categoryFilter').value;
+  const hideExpired = document.getElementById('hideExpired').checked;
+
+  let endpoint = '/products?';
+  if (search)   endpoint += `search=${encodeURIComponent(search)}&`;
+  if (category) endpoint += `category=${category}&`;
+
+  const { ok, data } = await apiFetch(endpoint);
+
+  if (!ok) { showToast('Error al cargar productos.', 'error'); return; }
+
+  let products = data.data || [];
+
+  // Filtrar vencidos en el frontend
+  if (hideExpired) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    products = products.filter(p => {
+      if (!p.fechaVencimiento) return true;
+      return new Date(p.fechaVencimiento + 'T00:00:00') >= today;
+    });
+  }
+
+  state.products = products;
+  renderProducts(products);
+}
+
+async function loadCategories() {
+  const { ok, data } = await apiFetch('/categories');
+  if (!ok) return;
+
+  const select = document.getElementById('categoryFilter');
+  data.data.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value       = cat.id;
+    opt.textContent = cat.nombre;
+    select.appendChild(opt);
+  });
+}
+
+// ── FILTROS ───────────────────────────────────────────────────────────────
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(loadProducts, 350); // debounce 350ms
+});
+document.getElementById('categoryFilter').addEventListener('change', loadProducts);
+document.getElementById('hideExpired').addEventListener('change', loadProducts);
+
+// ── AUTH FORMS ────────────────────────────────────────────────────────────
+document.getElementById('goToRegister').onclick = (e) => {
+  e.preventDefault();
+  document.getElementById('loginForm').style.display    = 'none';
+  document.getElementById('registerForm').style.display = 'block';
+  document.getElementById('authModalTitle').textContent = 'Crear cuenta';
+  document.getElementById('authMsg').textContent = '';
+};
+
+document.getElementById('goToLogin').onclick = (e) => {
+  e.preventDefault();
+  document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('loginForm').style.display    = 'block';
+  document.getElementById('authModalTitle').textContent = 'Iniciar Sesión';
+  document.getElementById('authMsg').textContent = '';
+};
+
+document.getElementById('submitLogin').onclick = async () => {
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const msg      = document.getElementById('authMsg');
+
+  if (!email || !password) { msg.textContent = 'Completa todos los campos.'; msg.className = 'auth-msg error'; return; }
+
+  const { ok, data } = await apiFetch('/auth/login', {
+    method: 'POST',
+    body:   JSON.stringify({ email, password }),
+  });
+
+  if (ok) {
+    saveSession(data.data.token, data.data.user);
+    closeModal('loginModal');
+    showToast(`¡Bienvenido/a, ${data.data.user.nombre}!`);
+  } else {
+    msg.textContent = data.message || 'Credenciales inválidas.';
+    msg.className   = 'auth-msg error';
+  }
+};
+
+document.getElementById('submitRegister').onclick = async () => {
+  const nombre   = document.getElementById('regNombre').value.trim();
+  const email    = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const telefono = document.getElementById('regTelefono').value.trim();
+  const msg      = document.getElementById('authMsg');
+
+  if (!nombre || !email || !password) {
+    msg.textContent = 'Nombre, email y contraseña son obligatorios.';
+    msg.className   = 'auth-msg error';
+    return;
+  }
+
+  const { ok, data } = await apiFetch('/auth/register', {
+    method: 'POST',
+    body:   JSON.stringify({ nombre, email, password, telefono }),
+  });
+
+  if (ok) {
+    saveSession(data.data.token, data.data.user);
+    closeModal('loginModal');
+    showToast(`Cuenta creada. ¡Bienvenido/a, ${data.data.user.nombre}!`);
+  } else {
+    msg.textContent = data.message || 'Error al registrar.';
+    msg.className   = 'auth-msg error';
+  }
+};
+
+// ── VERIFICAR ESTADO DEL SERVIDOR ─────────────────────────────────────────
+async function checkServerStatus() {
+  try {
+    const res = await fetch('/status');
+    const ok  = res.ok;
+    document.getElementById('serverStatus').innerHTML =
+      ok ? '<span class="ok">✓ Servidor operativo</span>'
+         : '<span class="fail">✗ Sin conexión</span>';
+  } catch {
+    document.getElementById('serverStatus').innerHTML = '<span class="fail">✗ Sin conexión</span>';
+  }
+}
+
+// ── INICIALIZAR ───────────────────────────────────────────────────────────
 (async function init() {
-  checkServerStatus();
-  updateAuthUI();
+  updateAuthButton();
   updateCartCount();
+  await checkServerStatus();
   await loadCategories();
   await loadProducts();
 })();
