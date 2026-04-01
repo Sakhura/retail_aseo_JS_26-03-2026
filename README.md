@@ -1,6 +1,6 @@
 # 🧴 RetailAseo — Node & Express Web App
 
-Proyecto integrador de los **módulos 6, 7 y 8** del programa Alkemy.  
+Proyecto integrador de los **módulos 6, 7 y 8** del programa JavaScript.  
 Aplicación web backend para una tienda de artículos de higiene y limpieza, construida con **Node.js**, **Express**, **Sequelize** y **PostgreSQL**.
 
 ---
