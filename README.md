@@ -71,14 +71,21 @@ retail_aseo/
     │   ├── Product.js
     │   ├── Order.js
     │   ├── OrderItem.js
-    │   └── Delivery.js
+      └── Delivery.js
     └── routes/
-        ├── index.js         # Router raíz
+    |    ├── index.js         # Router raíz
         ├── authRoutes.js
         ├── categoryRoutes.js
         ├── orderRoutes.js
         ├── productRoutes.js
         └── uploadRoutes.js
+    └── services/
+        ├── authService.js         # hashear
+        ├── productService.js
+        ├── categoryService.js
+        ├── orderService.js
+        ├── uploadService.js
+        
 ```
 
 **Justificación de la estructura:** se separó en `routes`, `controller`, `middlewares`, `models` y `config` para seguir el patrón MVC y respetar el principio de responsabilidad única. Cada carpeta agrupa archivos por función, no por módulo del curso, lo que facilita escalar el proyecto.
